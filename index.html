@@ -36,11 +36,10 @@
     </div>
 
     <script>
-        // This detects if you are on your laptop (localhost) or your phone (IP)
+        // This works on your laptop, your phone, AND the internet automatically
 const apiBase = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
                 ? 'http://localhost:3000' 
-                : `http://192.168.1.195:3000`;
-
+                : window.location.origin;
 async function getSummary(){
     try {
         const res = await fetch(`${apiBase}/summary`);
