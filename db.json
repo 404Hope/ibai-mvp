@@ -1,0 +1,136 @@
+{
+  "sales": [
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-02T14:19:06.370Z"
+    },
+    {
+      "units": 20,
+      "price": 5,
+      "profit": 100,
+      "date": "2026-03-02T14:19:16.680Z"
+    },
+    {
+      "units": 4,
+      "price": 2,
+      "profit": 8,
+      "date": "2026-03-03T07:05:12.903Z",
+      "source": "photo"
+    },
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-03T07:21:50.416Z",
+      "source": "text"
+    },
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-03T07:22:46.925Z",
+      "source": "text"
+    },
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-03T07:27:23.705Z",
+      "source": "text"
+    },
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-03T07:32:49.757Z",
+      "source": "text"
+    },
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-03T07:33:00.148Z",
+      "source": "photo"
+    },
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-03T07:51:02.362Z"
+    },
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-03T07:51:07.563Z"
+    },
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-03T07:51:12.147Z"
+    },
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-03T07:51:36.857Z"
+    },
+    {
+      "units": 3,
+      "price": 10,
+      "profit": 30,
+      "date": "2026-03-03T07:51:49.189Z"
+    },
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-03T08:36:47.438Z"
+    },
+    {
+      "units": 20,
+      "price": 10,
+      "profit": 200,
+      "date": "2026-03-03T08:37:02.791Z"
+    },
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-03T08:45:01.963Z"
+    },
+    {
+      "units": 10,
+      "price": 5,
+      "profit": 50,
+      "date": "2026-03-03T09:37:30.881Z"
+    },
+    {
+      "units": 11,
+      "price": 42,
+      "profit": 462,
+      "date": "2026-03-03T09:42:48.036Z"
+    }
+  ],
+  "expenses": [
+    {
+      "amount": 10,
+      "note": "exp 10 gas",
+      "date": "2026-03-03T08:22:52.416Z"
+    },
+    {
+      "amount": 10,
+      "note": "exp 10 gas",
+      "date": "2026-03-03T08:23:08.360Z"
+    },
+    {
+      "amount": 10,
+      "note": "exp 10 gas",
+      "date": "2026-03-03T08:23:15.504Z"
+    }
+  ],
+  "stock": 39
+}
