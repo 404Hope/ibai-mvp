@@ -27,39 +27,21 @@
     <div class="card stat-card shadow-sm mb-4">
         <div class="card-body">
             <div class="mb-3">
-                <label class="form-label small fw-bold">Product Name</label>
-                <input id="prodName" class="form-control mb-2" placeholder="e.g., Hoodie, Jeans, Tee">
+                <label class="form-label small fw-bold">Product / Category Name</label>
+                <input id="prodName" class="form-control mb-2" placeholder="e.g., Hoodie, Transport, Rent">
                 
                 <label class="form-label small fw-bold">Command</label>
-                <input id="msg" class="form-control mb-3" placeholder="sale 2 50  OR  stock 100">
+                <input id="msg" class="form-control mb-3" placeholder="sale 2 50 OR exp 10 OR stock 100">
                 
-                <button onclick="sendMessage()" class="btn btn-primary w-100 mb-2 fw-bold">Update Business</button>
+                <div class="d-flex gap-2 mb-2">
+                    <button onclick="sendMessage('sale')" class="btn btn-primary w-100 fw-bold">Add Sale</button>
+                    <button onclick="sendMessage('exp')" class="btn btn-danger w-100 fw-bold">Add Expense</button>
+                </div>
                 
-                <input type="file" id="photoInput" class="form-control" hidden onchange="uploadPhoto()">
                 <button onclick="document.getElementById('photoInput').click()" class="btn btn-outline-dark w-100 py-2">
                     📸 Scan Tag/Receipt
                 </button>
             </div>
-        </div>
-    </div>
-
-    <div class="mb-3 d-flex justify-content-between align-items-center">
-        <h6 class="fw-bold mb-0">Live Inventory</h6>
-        <span class="badge bg-dark" id="totalItems">0 Types</span>
-    </div>
-    <div id="inventoryList" class="mb-4">
-        </div>
-
-    <h6 class="fw-bold mb-3">Recent Activity</h6>
-    <div id="history" class="list-group shadow-sm rounded-4"></div>
-</div>
-
-<div class="toast-container position-fixed bottom-0 start-50 translate-middle-x p-3">
-    <div id="liveToast" class="toast align-items-center text-white bg-dark border-0" role="alert">
-        <div class="d-flex">
-            <div class="toast-body" id="toastMsg"></div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
     </div>
 </div>
 
@@ -127,22 +109,27 @@
         } catch(e) { console.log("Error:", e); }
     }
 
-    async function sendMessage() {
-        const msg = document.getElementById('msg').value;
-        const prod = document.getElementById('prodName').value;
-        if(!msg) return;
-
-        const res = await fetch(`${apiBase}/message`, {
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({ message: msg, product: prod })
-        });
-        const data = await res.json();
-        showToast(data.reply);
-        document.getElementById('msg').value = "";
-        getSummary();
+    async function sendMessage(type = 'sale') {
+    const msgInput = document.getElementById('msg');
+    const prodInput = document.getElementById('prodName');
+    
+    // If user clicks "Add Expense", we automatically add "exp" to their command
+    let finalMsg = msgInput.value;
+    if (type === 'exp' && !finalMsg.includes('exp')) {
+        finalMsg = "exp " + finalMsg;
     }
 
+    const res = await fetch(`${apiBase}/message`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ message: finalMsg, product: prodInput.value })
+    });
+    const data = await res.json();
+    showToast(data.reply);
+    
+    msgInput.value = "";
+    getSummary();
+}
     async function uploadPhoto() {
         const fileInput = document.getElementById('photoInput');
         const formData = new FormData();
