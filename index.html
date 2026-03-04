@@ -1,151 +1,101 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IB-AI PRO | Trader Dashboard</title>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB-AI PRO</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root { --primary-color: #2563eb; --success-color: #059669; }
-        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
-        .stat-card { border: none; border-radius: 15px; transition: transform 0.2s; }
-        .btn-primary { background-color: var(--primary-color); border: none; padding: 12px; border-radius: 10px; }
-        .product-badge { background: #e2e8f0; color: #475569; font-size: 0.8rem; padding: 4px 8px; border-radius: 6px; }
+        body { background: #f1f5f9; font-family: -apple-system, sans-serif; }
+        .state-neutral { background: #cbd5e1; color: #1e293b; }
+        .state-profit { background: #22c55e; color: white; }
+        .state-loss { background: #ef4444; color: white; }
+        .log-card { background: white; border-radius: 12px; padding: 15px; margin-bottom: 10px; border-left: 6px solid #2563eb; }
+        .log-EXPENSE { border-left-color: #ef4444; }
+        .btn-log { border-radius: 10px; padding: 12px; font-weight: bold; }
     </style>
 </head>
 <body>
-
-<div class="container py-4" style="max-width: 500px;">
-    <div class="card stat-card bg-white shadow-sm mb-4">
-        <div class="card-body text-center">
-            <h5 class="text-muted mb-1">Today's Performance</h5>
-            <h1 id="netProfit" class="fw-bold mb-0 text-dark">$0</h1>
-            <p id="statusMsg" class="small mt-2 fw-medium text-secondary">Loading your data...</p>
+<div class="container py-3" style="max-width: 450px;">
+    <div id="header" class="card border-0 shadow-sm mb-3 state-neutral">
+        <div class="card-body text-center py-4">
+            <small class="fw-bold opacity-75">TODAY'S NET PROFIT</small>
+            <h1 id="netProfit" class="display-4 fw-bold mb-0">$0</h1>
+            <p id="statusMsg" class="small mb-0 mt-1 fw-bold">WAKING UP...</p>
         </div>
     </div>
 
-    <div class="card stat-card shadow-sm mb-4">
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
         <div class="card-body">
-            <div class="mb-3">
-                <label class="form-label small fw-bold">Product / Category Name</label>
-                <input id="prodName" class="form-control mb-2" placeholder="e.g., Hoodie, Transport, Rent">
-                
-                <label class="form-label small fw-bold">Command</label>
-                <input id="msg" class="form-control mb-3" placeholder="sale 2 50 OR exp 10 OR stock 100">
-                
-                <div class="d-flex gap-2 mb-2">
-                    <button onclick="sendMessage('sale')" class="btn btn-primary w-100 fw-bold">Add Sale</button>
-                    <button onclick="sendMessage('exp')" class="btn btn-danger w-100 fw-bold">Add Expense</button>
-                </div>
-                
-                <button onclick="document.getElementById('photoInput').click()" class="btn btn-outline-dark w-100 py-2">
-                    📸 Scan Tag/Receipt
-                </button>
+            <input id="prodName" class="form-control mb-2 border-0 bg-light" placeholder="Item Name (e.g. Hoodie)">
+            <input id="msg" class="form-control mb-3 border-0 bg-light" placeholder="sale 1 15 OR stock 50 10">
+            <div class="d-flex gap-2">
+                <button onclick="send('sale')" class="btn btn-dark w-100 btn-log">LOG SALE</button>
+                <button onclick="send('exp')" class="btn btn-outline-danger w-100 btn-log">EXPENSE</button>
             </div>
+        </div>
     </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 px-1">
+        <h6 class="fw-bold mb-0">Today's Activity</h6>
+        <button onclick="update()" class="btn btn-sm btn-light">Refresh</button>
+    </div>
+    <div id="history"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const apiBase = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') 
                     ? 'http://localhost:3000' : window.location.origin;
 
-    function showToast(message) {
-        document.getElementById('toastMsg').innerText = message;
-        const toast = new bootstrap.Toast(document.getElementById('liveToast'));
-        toast.show();
-    }
-
-    async function getSummary() {
+    async function update() {
         try {
             const res = await fetch(`${apiBase}/summary`);
             const data = await res.json();
+            const profit = data.netProfit || 0;
             
-            // Update Profit & Hook
-            const profitEl = document.getElementById('netProfit');
-            const statusEl = document.getElementById('statusMsg');
-            profitEl.innerText = `$${data.netProfit}`;
-            
-            if(data.netProfit > 0) {
-                profitEl.className = "fw-bold mb-0 text-success";
-                statusEl.innerText = "🎉 You are making money today!";
-            } else if (data.netProfit < 0) {
-                profitEl.className = "fw-bold mb-0 text-danger";
-                statusEl.innerText = "⚠️ You are losing money today.";
+            // 1. Update Header Colors (Tri-State)
+            const h = document.getElementById('header');
+            const s = document.getElementById('statusMsg');
+            if (profit > 0) {
+                h.className = "card border-0 shadow-sm mb-3 state-profit";
+                s.innerText = "📈 MAKING MONEY TODAY";
+            } else if (profit < 0) {
+                h.className = "card border-0 shadow-sm mb-3 state-loss";
+                s.innerText = "📉 LOSS DETECTED";
             } else {
-                statusEl.innerText = "No sales yet. Let's get to work!";
+                h.className = "card border-0 shadow-sm mb-3 state-neutral";
+                s.innerText = "NO ACTIVITY YET";
             }
+            document.getElementById('netProfit').innerText = `$${profit}`;
 
-            // Render Inventory Cards
-            let invHTML = "";
-            const products = data.inventory || {};
-            const keys = Object.keys(products);
-            document.getElementById('totalItems').innerText = `${keys.length} Products`;
-            
-            keys.forEach(name => {
-                invHTML += `
-                <div class="card mb-2 border-0 shadow-sm">
-                    <div class="card-body d-flex justify-content-between align-items-center p-3">
-                        <div><span class="fw-bold">${name}</span></div>
-                        <div class="text-end">
-                            <span class="product-badge">${products[name]} in stock</span>
-                        </div>
+            // 2. Update Activity Log
+            document.getElementById('history').innerHTML = data.recentSales.map(s => `
+                <div class="log-card log-${s.type} shadow-sm d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge ${s.type==='SALE'?'bg-success':'bg-danger'} mb-1">${s.type}</span>
+                        <div class="fw-bold text-uppercase small">${s.product}</div>
                     </div>
-                </div>`;
-            });
-            document.getElementById('inventoryList').innerHTML = invHTML || '<p class="text-muted small">Empty stock.</p>';
-
-            // Render Activity
-            let listHTML = "";
-            data.recentSales.forEach(s => {
-                listHTML += `
-                <div class="list-group-item d-flex justify-content-between small">
-                    <span class="text-muted">${s.note || s.units + ' units'}</span>
-                    <span class="fw-bold">$${s.profit}</span>
-                </div>`;
-            });
-            document.getElementById('history').innerHTML = listHTML;
-
-        } catch(e) { console.log("Error:", e); }
+                    <div class="h5 mb-0 fw-bold ${s.profit < 0 ? 'text-danger' : 'text-dark'}">
+                        ${s.profit >= 0 ? '+' : ''}$${s.profit}
+                    </div>
+                </div>
+            `).join('') || '<p class="text-center text-muted small">Nothing logged today.</p>';
+        } catch(e) { console.error(e); }
     }
 
-    async function sendMessage(type = 'sale') {
-    const msgInput = document.getElementById('msg');
-    const prodInput = document.getElementById('prodName');
-    
-    // If user clicks "Add Expense", we automatically add "exp" to their command
-    let finalMsg = msgInput.value;
-    if (type === 'exp' && !finalMsg.includes('exp')) {
-        finalMsg = "exp " + finalMsg;
+    async function send(type) {
+        const msg = document.getElementById('msg').value;
+        const prod = document.getElementById('prodName').value || "General";
+        if(!msg) return;
+
+        await fetch(`${apiBase}/message`, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({ message: type === 'exp' ? `exp ${msg}` : msg, product: prod })
+        });
+        document.getElementById('msg').value = "";
+        update();
     }
-
-    const res = await fetch(`${apiBase}/message`, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ message: finalMsg, product: prodInput.value })
-    });
-    const data = await res.json();
-    showToast(data.reply);
-    
-    msgInput.value = "";
-    getSummary();
-}
-    async function uploadPhoto() {
-        const fileInput = document.getElementById('photoInput');
-        const formData = new FormData();
-        formData.append('image', fileInput.files[0]);
-        formData.append('product', document.getElementById('prodName').value);
-
-        showToast("⌛ AI is reading photo...");
-        try {
-            const res = await fetch(`${apiBase}/upload`, { method: 'POST', body: formData });
-            const data = await res.json();
-            showToast(data.reply);
-        } catch (err) { showToast("❌ Upload failed"); }
-        getSummary();
-    }
-
-    getSummary();
+    update();
 </script>
 </body>
 </html>
