@@ -113,6 +113,13 @@
       "price": 42,
       "profit": 462,
       "date": "2026-03-03T09:42:48.036Z"
+    },
+    {
+      "product": "Samsung 23",
+      "units": 50,
+      "profit": 100,
+      "date": "2026-03-04T06:15:06.691Z",
+      "note": "Sold 50 x Samsung 23"
     }
   ],
   "expenses": [
@@ -132,5 +139,10 @@
       "date": "2026-03-03T08:23:15.504Z"
     }
   ],
-  "stock": 39
+  "stock": 39,
+  "inventory": {
+    "Hoodie": 5,
+    "airtime": 100,
+    "Samsung 23": -45
+  }
 }

@@ -11,78 +11,85 @@ const adapter = new FileSync('db.json');
 const db = low(adapter);
 const upload = multer({ dest: 'uploads/' });
 
-db.defaults({ sales: [], expenses: [], stock: 0 }).write();
+// Expanded DB: added 'inventory' as an object
+db.defaults({ sales: [], expenses: [], inventory: {} }).write();
 
 app.use(cors());
 app.use(express.json());
 
-// --- 1. UPLOAD ROUTE (Moved to the top) ---
+// --- 1. THE SMART MESSAGE ROUTE ---
+app.post('/message', (req, res) => {
+    const { message, product } = req.body;
+    const msg = message.toLowerCase();
+    const prod = (product || "General").trim();
+    const nums = (msg.match(/\d+(\.\d+)?/g) || []).map(Number);
+
+    // Command: "stock 100" (Updates inventory for that specific item)
+    if (msg.includes('stock') && nums.length >= 1) {
+        db.set(`inventory.${prod}`, nums[0]).write();
+        return res.json({ reply: `📦 ${prod} stock set to ${nums[0]}` });
+    }
+
+    // Command: "sale 2 50" (Units and Price)
+    if (msg.includes('sale') && nums.length >= 2) {
+        const units = nums[0];
+        const profit = units * nums[1];
+        
+        // Deduct from specific product inventory
+        const currentStock = db.get(`inventory.${prod}`).value() || 0;
+        db.set(`inventory.${prod}`, currentStock - units).write();
+        
+        db.get('sales').push({ 
+            product: prod, 
+            units, 
+            profit, 
+            date: new Date(),
+            note: `Sold ${units} x ${prod}` 
+        }).write();
+        
+        return res.json({ reply: `✅ Sold ${units} ${prod} for $${profit}` });
+    }
+
+    res.json({ reply: "❌ Use: 'sale 2 50' or 'stock 100'" });
+});
+
+// --- 2. THE AI PHOTO ROUTE ---
 app.post('/upload', upload.single('image'), (req, res) => {
-    console.log("!!! PHOTO RECEIVED BY SERVER !!!"); 
-    
-    if (!req.file) return res.status(400).json({ reply: "❌ No file uploaded." });
+    const prod = (req.body.product || "General").trim();
+    if (!req.file) return res.status(400).json({ reply: "❌ No photo found" });
 
     Tesseract.recognize(path.resolve(req.file.path), 'eng')
         .then(({ data: { text } }) => {
-            const numbers = text.match(/\d+(\.\d+)?/g);
-            const nums = numbers ? numbers.map(Number) : [];
-
+            const nums = (text.match(/\d+(\.\d+)?/g) || []).map(Number);
             if (nums.length >= 2) {
                 const units = nums[0];
                 const profit = units * nums[1];
-                const currentStock = db.get('stock').value();
-                db.set('stock', currentStock - units).write();
-                db.get('sales').push({ units, price: nums[1], profit, date: new Date() }).write();
-                res.json({ reply: `📸 Found: ${units} units. Profit: $${profit}` });
+                const currentStock = db.get(`inventory.${prod}`).value() || 0;
+                
+                db.set(`inventory.${prod}`, currentStock - units).write();
+                db.get('sales').push({ product: prod, units, profit, date: new Date() }).write();
+                res.json({ reply: `📸 AI detected ${units} units of ${prod} ($${profit})` });
             } else {
-                res.json({ reply: "❓ Could not find 2 numbers in the photo." });
+                res.json({ reply: "❓ Couldn't read price/units clearly." });
             }
-        }).catch(err => {
-            console.error("OCR ERROR:", err);
-            res.status(500).json({ reply: "❌ OCR Failed" });
-        });
+        }).catch(() => res.status(500).json({ reply: "❌ AI Error" }));
 });
 
-// --- 2. MESSAGE ROUTE ---
-app.post('/message', (req, res) => {
-    const msg = req.body.message.toLowerCase();
-    const nums = (msg.match(/\d+(\.\d+)?/g) || []).map(Number);
-
-    if (msg.includes('stock') && nums.length >= 1) {
-        db.set('stock', nums[0]).write();
-        return res.json({ reply: `📦 Stock set to ${nums[0]}` });
-    }
-    if (msg.includes('exp') && nums.length >= 1) {
-        db.get('expenses').push({ amount: nums[0], note: msg, date: new Date() }).write();
-        return res.json({ reply: `💸 Expense $${nums[0]} saved.` });
-    }
-    if (nums.length >= 2) {
-        const profit = nums[0] * nums[1];
-        const currentStock = db.get('stock').value();
-        db.set('stock', currentStock - nums[0]).write();
-        db.get('sales').push({ units: nums[0], price: nums[1], profit, date: new Date() }).write();
-        res.json({ reply: `✅ Sale: $${profit}` });
-    } else {
-        res.json({ reply: "❌ Try 'stock 100' or '10 5'" });
-    }
-});
-
-// --- 3. SUMMARY ROUTE ---
+// --- 3. THE TRADER SUMMARY ---
 app.get('/summary', (req, res) => {
     const sales = db.get('sales').value() || [];
-    const expenses = db.get('expenses').value() || [];
-    const totalSales = sales.reduce((sum, s) => sum + s.profit, 0);
-    const totalExp = expenses.reduce((sum, e) => sum + e.amount, 0);
+    
+    // Filter for TODAY only (Trader Habit Loop)
+    const today = new Date().toDateString();
+    const todaySales = sales.filter(s => new Date(s.date).toDateString() === today);
+    const netProfit = todaySales.reduce((sum, s) => sum + s.profit, 0);
+
     res.json({ 
-        stock: db.get('stock').value(),
-        netProfit: totalSales - totalExp,
+        inventory: db.get('inventory').value(),
+        netProfit: netProfit,
         recentSales: sales.slice(-5).reverse()
     });
 });
 
-// --- 4. SERVE HOME PAGE ---
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-
-app.listen(3000, '0.0.0.0', () => console.log('🚀 IB-AI Live at http://localhost:3000'));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+app.listen(3000, '0.0.0.0', () => console.log('🚀 IB-AI Live!'));
